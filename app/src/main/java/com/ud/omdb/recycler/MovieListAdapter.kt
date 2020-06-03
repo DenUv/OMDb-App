@@ -67,13 +67,16 @@ class MovieListAdapter(
                 "mock"
             )
         )
-        notifyItemInserted(movieList.size - 1)
+        notifyItemInserted(movieList.size)
     }
 
     fun hideLoader() {
         val position: Int = movieList.size - 1
-        movieList.removeAt(position)
-        notifyItemRemoved(position)
+        val item: MovieDetails? = movieList[position]
+        if (item != null) {
+            movieList.removeAt(position)
+            notifyItemRemoved(position)
+        }
     }
 
     fun clear() {

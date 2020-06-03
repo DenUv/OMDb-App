@@ -2,5 +2,4 @@
     <string name="app_name">OMDb</string>
     <string name="url"> https://www.omdbapi.com/ </string>
     <string name="search_field_hint"> Enter movie title </string>
-    <string name="btn_search_label">Search</string>
 </resources>

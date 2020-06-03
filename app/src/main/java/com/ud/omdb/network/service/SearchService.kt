@@ -8,14 +8,14 @@ import retrofit2.http.Query
 interface SearchService {
 
     @GET("/")
-    suspend fun findMovieByTitle(
+    suspend fun loadMovieDetails(
         @Query("apiKey") apiKey: String,
-        @Query("t") title: String
+        @Query("t") id: String
     ): MovieDetails
 
 
     @GET("/")
-    suspend fun searchMovie(
+    suspend fun search(
         @Query("apiKey") apiKey: String,
         @Query("s") search: String,
         @Query("page") page: Int
