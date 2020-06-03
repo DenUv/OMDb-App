@@ -2,11 +2,11 @@ package com.ud.omdb.model
 
 import com.google.gson.annotations.SerializedName
 
-class Response(
+class MovieDetails(
     @SerializedName("Title")
     val title: String,
     @SerializedName("Year")
-    val year: Int,
+    val year: String,
     @SerializedName("Release")
     val released: String,
     @SerializedName("Genre")
@@ -17,6 +17,10 @@ class Response(
     val poster: String,
     @SerializedName("Response")
     val success: Boolean,
+
+    @SerializedName("imdbID")
+    val id: String,
+
     @SerializedName("Error")
     val errorMessage: String
 )
