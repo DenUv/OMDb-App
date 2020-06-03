@@ -8,6 +8,8 @@ data class SearchResult(
     @SerializedName("totalResults")
     val totalResults: Int,
     @SerializedName("Response")
-    val success: Boolean
+    val success: Boolean,
+    @SerializedName("Error")
+    val errorMessage: String
 
 )

@@ -1,7 +1,10 @@
 package com.ud.omdb.activity
 
 import android.os.Bundle
-import android.widget.*
+import android.view.View
+import android.widget.Button
+import android.widget.EditText
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -9,13 +12,14 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.textfield.TextInputLayout
 import com.ud.omdb.BuildConfig
 import com.ud.omdb.R
-import com.ud.omdb.recycler.MovieListAdapter
 import com.ud.omdb.databinding.ActivityMainBinding
 import com.ud.omdb.model.MovieDetails
 import com.ud.omdb.model.SearchResult
 import com.ud.omdb.network.NetworkClient
 import com.ud.omdb.network.service.SearchService
+import com.ud.omdb.recycler.MovieListAdapter
 import com.ud.omdb.recycler.PaginationListener
+import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -82,9 +86,13 @@ class MainActivity : AppCompatActivity() {
         movieListRecycler.addOnScrollListener(
             object : PaginationListener(layoutManager) {
                 override fun loadNextPage() {
-                    if (!isLoading && currentPage < maxPages) {
+                    if (currentPage < maxPages) {
                         loadMoreMovies()
                     }
+                }
+
+                override fun isLoading(): Boolean {
+                    return isLoading
                 }
             })
     }
@@ -95,29 +103,20 @@ class MainActivity : AppCompatActivity() {
         searchForMovie()
     }
 
-    fun findMovie() {
-        CoroutineScope(Dispatchers.Main).launch {
-            withContext(Dispatchers.IO) {
-                movieDetails = searchService.findMovieByTitle(
-                    BuildConfig.API_KEY,
-                    titleEditText.text.toString()
-                )
-            }
-            binding.response = movieDetails
+    suspend fun loadMovie() {
+        withContext(Dispatchers.IO) {
+            movieDetails = searchService.findMovieByTitle(
+                BuildConfig.API_KEY,
+                searchedMovie
+            )
         }
     }
 
     private fun searchForMovie() {
         resetPagination()
         CoroutineScope(Dispatchers.Main).launch {
-            withContext(Dispatchers.IO) {
-                searchResult = searchService.searchMovie(
-                    BuildConfig.API_KEY,
-                    searchedMovie,
-                    currentPage
-                )
-            }
-            movieListAdapter.addItems(searchResult.list)
+            searchResult = loadMovies()
+            handleResponse(searchResult.success)
             calculateMaxPages(searchResult.totalResults)
         }
     }
@@ -126,19 +125,25 @@ class MainActivity : AppCompatActivity() {
         CoroutineScope(Dispatchers.Main).launch {
             isLoading = true
             ++currentPage
-            movieListAdapter.showLoader()
-            withContext(Dispatchers.IO) {
-                searchResult = searchService.searchMovie(
-                    BuildConfig.API_KEY,
-                    searchedMovie,
-                    currentPage
-                )
+            withContext(coroutineContext) {
+                movieListAdapter.showLoader()
             }
-            movieListAdapter.hideLoader()
-            if (searchResult.success) {
-                movieListAdapter.addItems(searchResult.list)
+            searchResult = loadMovies()
+            withContext(coroutineContext) {
+                movieListAdapter.hideLoader()
             }
+            handleResponse(searchResult.success)
             isLoading = false
+        }
+    }
+
+    private suspend fun loadMovies(): SearchResult {
+        return withContext(Dispatchers.IO) {
+            searchService.searchMovie(
+                BuildConfig.API_KEY,
+                searchedMovie,
+                currentPage
+            )
         }
     }
 
@@ -152,9 +157,22 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun resetPagination() {
+        movieListRecycler.visibility = View.VISIBLE
+        message.text = null
         currentPage = 1
         maxPages = currentPage
         movieListAdapter.clear()
+    }
+
+    suspend fun handleResponse(success: Boolean) {
+        withContext(Dispatchers.Main) {
+            if (success) {
+                movieListAdapter.addItems(searchResult.list)
+            } else {
+                movieListRecycler.visibility = View.GONE
+                message.text = searchResult.errorMessage
+            }
+        }
     }
 }
 

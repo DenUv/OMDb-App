@@ -9,6 +9,8 @@ abstract class PaginationListener(
 
     private val pageSize = 10
 
+    private var isLoading = false
+
     override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
         super.onScrolled(recyclerView, dx, dy)
 
@@ -16,14 +18,17 @@ abstract class PaginationListener(
         val totalItemCount = layoutManager.itemCount
         val firstVisiblePosition = layoutManager.findFirstVisibleItemPosition()
 
-        if ((visibleItemsCount + firstVisiblePosition) >= totalItemCount
-            && firstVisiblePosition >= 0
-            && totalItemCount >= pageSize
-        ) {
-            loadNextPage()
+        if (!isLoading()) {
+            if ((visibleItemsCount + firstVisiblePosition) >= totalItemCount
+                && firstVisiblePosition >= 0
+                && totalItemCount >= pageSize
+            ) {
+                loadNextPage()
+            }
         }
     }
 
     abstract fun loadNextPage()
 
+    abstract fun isLoading(): Boolean
 }
