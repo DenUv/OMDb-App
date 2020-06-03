@@ -87,7 +87,7 @@ class MovieListAdapter(
 
     fun addItems(data: List<MovieDetails>) {
         movieList.addAll(data)
-        notifyDataSetChanged()
+        notifyItemRangeChanged(movieList.size - 1, data.size)
     }
 
     inner class MovieViewHolder(itemView: View) : BaseViewHolder(itemView) {

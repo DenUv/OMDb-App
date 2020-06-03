@@ -1,15 +1,18 @@
 package com.ud.omdb.activity
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.textfield.TextInputLayout
+import com.jakewharton.rxbinding2.widget.RxTextView
 import com.ud.omdb.BuildConfig
 import com.ud.omdb.R
 import com.ud.omdb.databinding.ActivityMainBinding
@@ -19,11 +22,15 @@ import com.ud.omdb.network.NetworkClient
 import com.ud.omdb.network.service.SearchService
 import com.ud.omdb.recycler.MovieListAdapter
 import com.ud.omdb.recycler.PaginationListener
-import kotlinx.android.synthetic.main.activity_main.*
+import io.reactivex.Observable
+import io.reactivex.Observer
+import io.reactivex.disposables.Disposable
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.lang.Exception
+import java.util.concurrent.TimeUnit
 
 class MainActivity : AppCompatActivity() {
 
@@ -35,8 +42,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var titleEditText: EditText
     private lateinit var message: TextView
     private lateinit var movieListRecycler: RecyclerView
-
-    private lateinit var searchButton: Button
 
     private lateinit var movieListAdapter: MovieListAdapter
 
@@ -58,6 +63,7 @@ class MainActivity : AppCompatActivity() {
         initRecyclerView()
 
         initServices()
+        observeInput()
     }
 
     private fun initServices() {
@@ -69,11 +75,8 @@ class MainActivity : AppCompatActivity() {
 
         titleInput = binding.tilSearchField
         titleEditText = binding.etSearchField
-        searchButton = binding.btnSearch
         message = binding.tvMessage
         movieListRecycler = binding.rvMovieList
-
-        binding.activity = this
     }
 
     private fun initRecyclerView() {
@@ -97,10 +100,24 @@ class MainActivity : AppCompatActivity() {
             })
     }
 
-    fun submit() {
-        //TODO add validation
-        searchedMovie = titleEditText.text.toString()
-        searchForMovie()
+    @SuppressLint("CheckResult")
+    fun observeInput() {
+        val searchInputObservable = RxTextView.textChanges(titleEditText)
+            .map { titleEditText.text.toString() }
+            .filter { it.length >= 3 }
+            .debounce(800, TimeUnit.MILLISECONDS)
+            .distinctUntilChanged()
+
+        searchInputObservable.subscribe(
+            {
+                searchedMovie = it
+                CoroutineScope(Dispatchers.IO).launch {
+                    searchForMovie()
+                }
+            },
+            { message.text = it.localizedMessage }
+        )
+
     }
 
     suspend fun loadMovie() {
@@ -113,9 +130,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun searchForMovie() {
-        resetPagination()
         CoroutineScope(Dispatchers.Main).launch {
-            searchResult = loadMovies()
+            resetPagination()
+            try {
+                searchResult = loadMovies()
+            } catch (exp: Exception) {
+                message.text = exp.localizedMessage
+            }
             handleResponse(searchResult.success)
             calculateMaxPages(searchResult.totalResults)
         }
@@ -128,7 +149,11 @@ class MainActivity : AppCompatActivity() {
             withContext(coroutineContext) {
                 movieListAdapter.showLoader()
             }
-            searchResult = loadMovies()
+            try {
+                searchResult = loadMovies()
+            } catch (exp: Exception) {
+                message.text = exp.localizedMessage
+            }
             withContext(coroutineContext) {
                 movieListAdapter.hideLoader()
             }
