@@ -10,7 +10,7 @@ interface SearchService {
     @GET("/")
     suspend fun loadMovieDetails(
         @Query("apiKey") apiKey: String,
-        @Query("t") id: String
+        @Query("i") id: String
     ): MovieDetails
 
 

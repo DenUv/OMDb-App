@@ -2,13 +2,16 @@ package com.ud.omdb.activity
 
 import android.os.Bundle
 import android.widget.FrameLayout
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import com.ud.omdb.BuildConfig
 import com.ud.omdb.R
 import com.ud.omdb.databinding.ActivityMainBinding
+import com.ud.omdb.fragment.MovieDetailsFragment
 import com.ud.omdb.fragment.SearchFragment
+import com.ud.omdb.listener.OnItemTouchListener
 import com.ud.omdb.model.MovieDetails
 import com.ud.omdb.model.SearchResult
 import com.ud.omdb.network.NetworkClient
@@ -16,7 +19,7 @@ import com.ud.omdb.network.service.SearchService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), OnItemTouchListener {
 
     private lateinit var searchService: SearchService
 
@@ -25,9 +28,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var fragmentContainer: FrameLayout
 
     private lateinit var searchFragment: Fragment
+    private lateinit var movieDetailsFragment: Fragment
+
 
     private val searchFragmentTag: String = "search_frag_tag"
-    private val detailsFragmentTag: String = "movie_details_frag_tag"
+    private val movieDetailsFragmentTag: String = "movie_details_frag_tag"
 
     //pagination. mb to move somewhere ?
     var currentPage: Int = 1
@@ -51,6 +56,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun initFragments() {
         searchFragment = SearchFragment()
+        movieDetailsFragment = MovieDetailsFragment()
     }
 
     private fun initDataBinding() {
@@ -88,8 +94,30 @@ class MainActivity : AppCompatActivity() {
                 .show(existingFragment).commit()
         } else {
             supportFragmentManager.beginTransaction()
-                .add(fragmentContainer.id, fragmentToAdd, fragmentTag).commit()
+                .add(fragmentContainer.id, fragmentToAdd, fragmentTag)
+                .addToBackStack(fragmentTag)
+                .commit()
         }
+    }
+
+    override fun onItemTouchListener(id: String) {
+        Toast.makeText(this, id, Toast.LENGTH_SHORT).show()
+
+        val bundle = Bundle()
+        bundle.putString("id", id)
+
+        movieDetailsFragment.arguments = bundle
+        showFragment(movieDetailsFragment, movieDetailsFragmentTag)
+    }
+
+    override fun onBackPressed() {
+        if (supportFragmentManager.backStackEntryCount == 1) {
+            finish();
+        } else {
+            showFragment(searchFragment, searchFragmentTag)
+            super.onBackPressed();
+        }
+
     }
 }
 

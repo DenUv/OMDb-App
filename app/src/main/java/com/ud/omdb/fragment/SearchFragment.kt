@@ -16,13 +16,11 @@ import com.jakewharton.rxbinding2.widget.RxTextView
 import com.ud.omdb.R
 import com.ud.omdb.activity.MainActivity
 import com.ud.omdb.databinding.FragmentSearchBinding
+import com.ud.omdb.listener.OnItemTouchListener
 import com.ud.omdb.model.SearchResult
 import com.ud.omdb.recycler.MovieListAdapter
 import com.ud.omdb.recycler.PaginationListener
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 import java.util.concurrent.TimeUnit
 
 class SearchFragment : Fragment() {
@@ -70,7 +68,7 @@ class SearchFragment : Fragment() {
         val layoutManager = LinearLayoutManager(parentActivity)
 
         movieListRecycler.layoutManager = layoutManager
-        movieListAdapter = MovieListAdapter(parentActivity)
+        movieListAdapter = MovieListAdapter(parentActivity, parentActivity)
         movieListRecycler.adapter = movieListAdapter
 
         movieListRecycler.addOnScrollListener(object : PaginationListener(layoutManager) {
@@ -109,14 +107,14 @@ class SearchFragment : Fragment() {
     //Network
     private fun searchForMovie() {
         CoroutineScope(Dispatchers.Main).launch {
-            resetPagination()
             try {
                 searchResult = parentActivity.loadMoviesList(searchedTitle)
             } catch (exp: Exception) {
                 message.text = exp.localizedMessage
             }
+            resetPagination()
             calculateMaxPages(searchResult.totalResults)
-            handleResponse(searchResult.success)
+            handleResponse()
         }
     }
 
@@ -132,18 +130,20 @@ class SearchFragment : Fragment() {
                 searchResult = parentActivity.loadMoviesList(searchedTitle)
             } catch (exp: Exception) {
                 message.text = exp.localizedMessage
+                --parentActivity.currentPage
+                cancel()
             }
             withContext(coroutineContext) {
                 movieListAdapter.hideLoader()
-                handleResponse(searchResult.success)
                 parentActivity.isLoading = false
+                handleResponse()
             }
         }
     }
 
-    private suspend fun handleResponse(success: Boolean) {
+    private suspend fun handleResponse() {
         withContext(Dispatchers.Main) {
-            if (success) {
+            if (searchResult.success) {
                 movieListAdapter.addItems(searchResult.list)
             } else {
                 //TODO -> rework to show error and not hide list

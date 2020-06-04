@@ -9,11 +9,12 @@ import androidx.recyclerview.widget.RecyclerView
 import com.ud.omdb.R
 import com.ud.omdb.activity.MainActivity
 import com.ud.omdb.databinding.MovieListItemBinding
+import com.ud.omdb.listener.OnItemTouchListener
 import com.ud.omdb.model.MovieDetails
 
 class MovieListAdapter(
-    private val parentActivity:
-    Activity
+    private val parentActivity: Activity,
+    private val onTouchListener: OnItemTouchListener
 ) : RecyclerView.Adapter<BaseViewHolder>() {
 
     private val VIEW_TYPE_LOADING = 0
@@ -93,9 +94,13 @@ class MovieListAdapter(
         notifyItemRangeChanged(movieList.size - 1, data.size)
     }
 
-    inner class MovieViewHolder(itemView: View) : BaseViewHolder(itemView) {
+    inner class MovieViewHolder(itemView: View) : BaseViewHolder(itemView), View.OnClickListener {
 
         private val binding: MovieListItemBinding = DataBindingUtil.bind(itemView)!!
+
+        init {
+            itemView.setOnClickListener(this)
+        }
 
         override fun onBind(position: Int) {
             super.onBind(position)
@@ -103,6 +108,11 @@ class MovieListAdapter(
         }
 
         override fun clear() {}
+
+        override fun onClick(v: View?) {
+            val item = movieList[adapterPosition]
+            onTouchListener.onItemTouchListener(item.id)
+        }
     }
 
     inner class ProgressBarViewHolder(itemView: View) : BaseViewHolder(itemView) {
