@@ -111,6 +111,7 @@ class SearchFragment : Fragment() {
                 searchResult = parentActivity.loadMoviesList(searchedTitle)
             } catch (exp: Exception) {
                 message.text = exp.localizedMessage
+                cancel()
             }
             resetPagination()
             calculateMaxPages(searchResult.totalResults)

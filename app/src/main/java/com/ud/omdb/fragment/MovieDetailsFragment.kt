@@ -1,13 +1,14 @@
 package com.ud.omdb.fragment
 
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.databinding.DataBindingUtil
-
+import androidx.fragment.app.Fragment
+import com.squareup.picasso.Picasso
 import com.ud.omdb.R
 import com.ud.omdb.activity.MainActivity
 import com.ud.omdb.databinding.FragmentMovieDetailsBinding
@@ -23,7 +24,9 @@ class MovieDetailsFragment : Fragment() {
     private lateinit var binding: FragmentMovieDetailsBinding
 
     private lateinit var movieTitle: TextView
+    private lateinit var poster: ImageView
     private lateinit var movieId: String
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,13 +50,20 @@ class MovieDetailsFragment : Fragment() {
     private fun initDataBinding(inflater: LayoutInflater, container: ViewGroup?) {
         binding =
             DataBindingUtil.inflate(inflater, R.layout.fragment_movie_details, container, false)
-        movieTitle = binding.tvMovieName
+        movieTitle = binding.tvMovieTitle
+        poster = binding.ivPoster
     }
 
     private fun loadMovieDetails() {
         CoroutineScope(Dispatchers.Main).launch {
             val movieDetails = parentActivity.loadMovieDetails(movieId)
             binding.movie = movieDetails
+
+            if (movieDetails.poster != "N/A") {
+                Picasso.with(parentActivity)
+                    .load(movieDetails.poster)
+                    .into(poster)
+            }
         }
     }
 

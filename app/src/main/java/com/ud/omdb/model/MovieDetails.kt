@@ -7,7 +7,7 @@ class MovieDetails(
     val title: String,
     @SerializedName("Year")
     val year: String,
-    @SerializedName("Release")
+    @SerializedName("Released")
     val released: String,
     @SerializedName("Genre")
     val genre: String,
