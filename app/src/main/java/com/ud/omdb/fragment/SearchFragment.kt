@@ -16,7 +16,6 @@ import com.jakewharton.rxbinding2.widget.RxTextView
 import com.ud.omdb.R
 import com.ud.omdb.activity.MainActivity
 import com.ud.omdb.databinding.FragmentSearchBinding
-import com.ud.omdb.listener.OnItemTouchListener
 import com.ud.omdb.model.SearchResult
 import com.ud.omdb.recycler.MovieListAdapter
 import com.ud.omdb.recycler.PaginationListener
@@ -29,7 +28,7 @@ class SearchFragment : Fragment() {
 
     private lateinit var titleInput: TextInputLayout
     private lateinit var titleEditText: EditText
-    private lateinit var message: TextView
+    private lateinit var errorMessage: TextView
     private lateinit var movieListRecycler: RecyclerView
 
     private lateinit var movieListAdapter: MovieListAdapter
@@ -54,13 +53,20 @@ class SearchFragment : Fragment() {
         return binding.root
     }
 
+    override fun onHiddenChanged(hidden: Boolean) {
+        if (!hidden) {
+            parentActivity.supportActionBar?.setDisplayHomeAsUpEnabled(false)
+        }
+        super.onHiddenChanged(hidden)
+    }
+
     private fun initDataBinding(layoutInflater: LayoutInflater, container: ViewGroup?) {
         binding =
             DataBindingUtil.inflate(layoutInflater, R.layout.fragment_search, container, false)
 
         titleInput = binding.tilSearchField
         titleEditText = binding.etSearchField
-        message = binding.tvMessage
+        errorMessage = binding.tvErrorMessage
         movieListRecycler = binding.rvMovieList
     }
 
@@ -89,29 +95,32 @@ class SearchFragment : Fragment() {
     private fun subscribeOnSearchInput() {
         val searchInputObservable = RxTextView.textChanges(titleEditText)
             .map { titleEditText.text.toString() }
-            .filter { it.length >= 3 }
+            .filter { it.length >= 3 || it.isEmpty() }
             .debounce(800, TimeUnit.MILLISECONDS)
             .distinctUntilChanged()
 
         searchInputObservable.subscribe(
             {
-                searchedTitle = it
-                CoroutineScope(Dispatchers.IO).launch {
-                    searchForMovie()
+                if (it.isNotEmpty()) {
+                    searchedTitle = it
+                    CoroutineScope(Dispatchers.IO).launch {
+                        searchForMovie()
+                    }
                 }
             },
-            { message.text = it.localizedMessage }
+            { errorMessage.text = it.localizedMessage }
         )
     }
 
     //Network
     private fun searchForMovie() {
         CoroutineScope(Dispatchers.Main).launch {
+            hideErrorMessage()
             try {
                 searchResult = parentActivity.loadMoviesList(searchedTitle)
             } catch (exp: Exception) {
-                message.text = exp.localizedMessage
-                cancel()
+                showErrorMessage(exp.localizedMessage)
+                return@launch
             }
             resetPagination()
             calculateMaxPages(searchResult.totalResults)
@@ -121,8 +130,8 @@ class SearchFragment : Fragment() {
 
     private fun loadMoreMovies() {
         CoroutineScope(Dispatchers.Main).launch {
-            //TODO try to move out of withContext
             withContext(coroutineContext) {
+                hideErrorMessage()
                 parentActivity.isLoading = true
                 ++parentActivity.currentPage
                 movieListAdapter.showLoader()
@@ -130,9 +139,9 @@ class SearchFragment : Fragment() {
             try {
                 searchResult = parentActivity.loadMoviesList(searchedTitle)
             } catch (exp: Exception) {
-                message.text = exp.localizedMessage
+                showErrorMessage(exp.localizedMessage)
                 --parentActivity.currentPage
-                cancel()
+                return@launch
             }
             withContext(coroutineContext) {
                 movieListAdapter.hideLoader()
@@ -147,9 +156,7 @@ class SearchFragment : Fragment() {
             if (searchResult.success) {
                 movieListAdapter.addItems(searchResult.list)
             } else {
-                //TODO -> rework to show error and not hide list
-                movieListRecycler.visibility = View.GONE
-                message.text = searchResult.errorMessage
+                showErrorMessage(searchResult.errorMessage)
             }
         }
     }
@@ -158,7 +165,7 @@ class SearchFragment : Fragment() {
     private fun resetPagination() {
         movieListAdapter.clear()
         movieListRecycler.visibility = View.VISIBLE
-        message.text = null
+        errorMessage.text = null
         parentActivity.currentPage = 1
         parentActivity.maxPages = parentActivity.currentPage
     }
@@ -170,6 +177,17 @@ class SearchFragment : Fragment() {
         } else {
             resultsCount / parentActivity.pageSize
         }
+    }
+
+    //Errors
+    private fun showErrorMessage(message: String?) {
+        errorMessage.visibility = View.VISIBLE
+        errorMessage.text = message
+    }
+
+    private fun hideErrorMessage() {
+        errorMessage.visibility = View.GONE
+        errorMessage.text = null
     }
 
 

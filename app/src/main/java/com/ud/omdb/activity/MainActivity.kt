@@ -1,9 +1,12 @@
 package com.ud.omdb.activity
 
 import android.os.Bundle
+import android.view.MenuItem
 import android.widget.FrameLayout
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import com.ud.omdb.BuildConfig
@@ -16,6 +19,7 @@ import com.ud.omdb.model.MovieDetails
 import com.ud.omdb.model.SearchResult
 import com.ud.omdb.network.NetworkClient
 import com.ud.omdb.network.service.SearchService
+import kotlinx.android.synthetic.main.activity_main.view.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -26,6 +30,8 @@ class MainActivity : AppCompatActivity(), OnItemTouchListener {
     private lateinit var binding: ActivityMainBinding
 
     private lateinit var fragmentContainer: FrameLayout
+    private lateinit var toolbar: Toolbar
+    private lateinit var toolbarTitle: TextView
 
     private lateinit var searchFragment: Fragment
     private lateinit var movieDetailsFragment: Fragment
@@ -34,7 +40,7 @@ class MainActivity : AppCompatActivity(), OnItemTouchListener {
     private val searchFragmentTag: String = "search_frag_tag"
     private val movieDetailsFragmentTag: String = "movie_details_frag_tag"
 
-    //pagination. mb to move somewhere ?
+    //pagination
     var currentPage: Int = 1
     var maxPages: Int = currentPage
     val pageSize: Int = 10
@@ -46,8 +52,8 @@ class MainActivity : AppCompatActivity(), OnItemTouchListener {
         initDataBinding()
         initServices()
         initFragments()
-
-        showFragment(searchFragment, searchFragmentTag)
+        initToolbar()
+        showFragment(searchFragment, searchFragmentTag, R.string.search_frag_toolbar_title)
     }
 
     private fun initServices() {
@@ -59,9 +65,16 @@ class MainActivity : AppCompatActivity(), OnItemTouchListener {
         movieDetailsFragment = MovieDetailsFragment()
     }
 
+    private fun initToolbar() {
+        setSupportActionBar(toolbar)
+        supportActionBar?.setDisplayShowTitleEnabled(false)
+    }
+
     private fun initDataBinding() {
         binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
         fragmentContainer = binding.fragmentContainer
+        toolbar = binding.toolbar
+        toolbarTitle = binding.tvToolbarTitle
     }
 
 
@@ -81,7 +94,8 @@ class MainActivity : AppCompatActivity(), OnItemTouchListener {
 
     private fun showFragment(
         fragmentToAdd: Fragment,
-        fragmentTag: String
+        fragmentTag: String,
+        toolBarTitleId: Int
     ) {
         for (attachedFragment: Fragment in supportFragmentManager.fragments) {
             if (attachedFragment.isVisible) {
@@ -98,23 +112,36 @@ class MainActivity : AppCompatActivity(), OnItemTouchListener {
                 .addToBackStack(fragmentTag)
                 .commit()
         }
+        toolbar.tv_toolbar_title.text = getString(toolBarTitleId)
     }
 
     override fun onItemTouchListener(id: String) {
-        Toast.makeText(this, id, Toast.LENGTH_SHORT).show()
-
         val bundle = Bundle()
         bundle.putString("id", id)
 
         movieDetailsFragment.arguments = bundle
-        showFragment(movieDetailsFragment, movieDetailsFragmentTag)
+        showFragment(
+            movieDetailsFragment,
+            movieDetailsFragmentTag,
+            R.string.movie_details_frag_toolbar_title
+        )
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            android.R.id.home -> {
+                onBackPressed()
+            }
+        }
+
+        return super.onOptionsItemSelected(item)
     }
 
     override fun onBackPressed() {
         if (supportFragmentManager.backStackEntryCount == 1) {
             finish();
         } else {
-            showFragment(searchFragment, searchFragmentTag)
+            showFragment(searchFragment, searchFragmentTag, R.string.search_frag_toolbar_title)
             super.onBackPressed();
         }
 

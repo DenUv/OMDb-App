@@ -29,10 +29,12 @@
         </com.google.android.material.textfield.TextInputLayout>
 
         <TextView
-            android:id="@+id/tv_message"
+            android:id="@+id/tv_error_message"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/default_margin"
+            android:gravity="center"
+            android:visibility="gone"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/til_search_field" />
@@ -43,7 +45,7 @@
             android:layout_height="0dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/til_search_field" />
+            app:layout_constraintTop_toBottomOf="@id/tv_error_message" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

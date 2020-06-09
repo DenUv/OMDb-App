@@ -3,6 +3,6 @@
     <string name="url"> https://www.omdbapi.com/ </string>
     <string name="search_field_hint"> Enter movie title </string>
 
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="search_frag_toolbar_title"> Search </string>
+    <string name="movie_details_frag_toolbar_title"> Details </string>
 </resources>
