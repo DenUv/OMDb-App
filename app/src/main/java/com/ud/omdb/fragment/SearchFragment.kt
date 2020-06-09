@@ -116,13 +116,15 @@ class SearchFragment : Fragment() {
     private fun searchForMovie() {
         CoroutineScope(Dispatchers.Main).launch {
             hideErrorMessage()
+            hideOnLoadError()
+
+            resetPagination()
             try {
                 searchResult = parentActivity.loadMoviesList(searchedTitle)
             } catch (exp: Exception) {
                 showErrorMessage(exp.localizedMessage)
                 return@launch
             }
-            resetPagination()
             calculateMaxPages(searchResult.totalResults)
             handleResponse()
         }
@@ -132,6 +134,8 @@ class SearchFragment : Fragment() {
         CoroutineScope(Dispatchers.Main).launch {
             withContext(coroutineContext) {
                 hideErrorMessage()
+                hideOnLoadError()
+
                 parentActivity.isLoading = true
                 ++parentActivity.currentPage
                 movieListAdapter.showLoader()
@@ -139,7 +143,8 @@ class SearchFragment : Fragment() {
             try {
                 searchResult = parentActivity.loadMoviesList(searchedTitle)
             } catch (exp: Exception) {
-                showErrorMessage(exp.localizedMessage)
+                showOnLoadError()
+                movieListAdapter.hideLoader()
                 --parentActivity.currentPage
                 return@launch
             }
@@ -190,5 +195,16 @@ class SearchFragment : Fragment() {
         errorMessage.text = null
     }
 
+    private fun showOnLoadError() {
+        errorMessage.visibility = View.VISIBLE
+        errorMessage.setOnClickListener { loadMoreMovies() }
+        errorMessage.text = getString(R.string.on_load_error)
+    }
+
+    private fun hideOnLoadError() {
+        errorMessage.visibility = View.GONE
+        errorMessage.setOnClickListener(null)
+        errorMessage.text = null
+    }
 
 }

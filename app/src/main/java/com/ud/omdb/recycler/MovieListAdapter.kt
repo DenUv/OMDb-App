@@ -72,9 +72,9 @@ class MovieListAdapter(
     }
 
     fun hideLoader() {
-        val position: Int = movieList.size - 1
-        val item: MovieDetails? = movieList[position]
+        val item = movieList.find { it.id == "mock" }
         if (item != null) {
+            val position = movieList.indexOf(item)
             movieList.removeAt(position)
             notifyItemRemoved(position)
         }

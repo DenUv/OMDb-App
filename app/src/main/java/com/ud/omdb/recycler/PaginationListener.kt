@@ -9,8 +9,6 @@ abstract class PaginationListener(
 
     private val pageSize = 10
 
-    private var isLoading = false
-
     override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
         super.onScrolled(recyclerView, dx, dy)
 

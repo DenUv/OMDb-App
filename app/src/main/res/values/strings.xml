@@ -5,4 +5,5 @@
 
     <string name="search_frag_toolbar_title"> Search </string>
     <string name="movie_details_frag_toolbar_title"> Details </string>
+    <string name="on_load_error"> Connection issues. Click to load again </string>
 </resources>

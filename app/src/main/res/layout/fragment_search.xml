@@ -32,7 +32,7 @@
             android:id="@+id/tv_error_message"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/default_margin"
+            android:layout_marginTop="@dimen/minimal_margin"
             android:gravity="center"
             android:visibility="gone"
             app:layout_constraintEnd_toEndOf="parent"
@@ -43,6 +43,7 @@
             android:id="@+id/rv_movie_list"
             android:layout_width="match_parent"
             android:layout_height="0dp"
+            android:layout_marginTop="@dimen/minimal_margin"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/tv_error_message" />

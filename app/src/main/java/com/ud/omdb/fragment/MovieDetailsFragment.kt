@@ -61,21 +61,32 @@ class MovieDetailsFragment : Fragment() {
 
     private fun loadMovieDetails() {
         CoroutineScope(Dispatchers.Main).launch {
+            hideErrorMessage()
             var movieDetails: MovieDetails? = null
-            errorMessage.visibility = View.GONE
-
             try {
                 movieDetails = parentActivity.loadMovieDetails(movieId)
             } catch (exp: Exception) {
-                errorMessage.visibility = View.VISIBLE
+                showErrorMessage(exp.localizedMessage)
+                return@launch
             }
             binding.movie = movieDetails
-            if (movieDetails?.poster != "N/A") {
+            if (movieDetails.poster != "N/A") {
                 Picasso.with(parentActivity)
-                    .load(movieDetails?.poster)
+                    .load(movieDetails.poster)
                     .into(poster)
             }
         }
+    }
+
+
+    private fun showErrorMessage(error: String?) {
+        errorMessage.visibility = View.VISIBLE
+        errorMessage.text = error
+    }
+
+    private fun hideErrorMessage() {
+        errorMessage.text = null
+        errorMessage.visibility = View.GONE
     }
 
 }
