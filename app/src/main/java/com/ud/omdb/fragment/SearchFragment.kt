@@ -80,7 +80,7 @@ class SearchFragment : Fragment() {
     }
 
     private fun initViewModel() {
-        viewModel = SearchViewModel(requireActivity().application)
+        viewModel = SearchViewModel()
     }
 
     private fun initRecyclerView() {

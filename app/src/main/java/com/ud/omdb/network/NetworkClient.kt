@@ -1,15 +1,15 @@
 package com.ud.omdb.network
 
-import android.content.Context
 import com.google.gson.GsonBuilder
-import com.ud.omdb.R
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
-class NetworkClient(private val context: Context) {
+class NetworkClient {
+
+    private val baseUrl: String = "https://www.omdbapi.com/"
 
     private lateinit var retrofitInstance: Retrofit
     private lateinit var httpClient: OkHttpClient
@@ -27,7 +27,7 @@ class NetworkClient(private val context: Context) {
 
         httpClient = configureHttpClient()
         retrofitInstance = Retrofit.Builder()
-            .baseUrl(context.getString(R.string.url))
+            .baseUrl(baseUrl)
             .addConverterFactory(GsonConverterFactory.create(gson))
             .client(httpClient)
             .build()

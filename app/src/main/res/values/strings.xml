@@ -1,6 +1,5 @@
 <resources>
     <string name="app_name">OMDb</string>
-    <string name="url"> https://www.omdbapi.com/ </string>
     <string name="search_field_hint"> Enter movie title </string>
 
     <string name="search_frag_toolbar_title"> Search </string>

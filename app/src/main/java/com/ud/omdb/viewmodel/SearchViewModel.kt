@@ -1,7 +1,6 @@
 package com.ud.omdb.viewmodel
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import com.ud.omdb.BuildConfig
 import com.ud.omdb.model.SearchResult
 import com.ud.omdb.network.NetworkClient
@@ -9,10 +8,10 @@ import com.ud.omdb.network.service.SearchService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-class SearchViewModel(private val app: Application) : AndroidViewModel(app) {
+class SearchViewModel : ViewModel() {
 
     private var searchService: SearchService =
-        NetworkClient(app).createService(SearchService::class.java)
+        NetworkClient().createService(SearchService::class.java)
 
     //pagination
     private val pageSize: Int = 10
