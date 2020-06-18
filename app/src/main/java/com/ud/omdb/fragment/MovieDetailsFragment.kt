@@ -6,39 +6,38 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
-import com.squareup.picasso.Picasso
+import androidx.lifecycle.viewModelScope
 import com.ud.omdb.R
-import com.ud.omdb.activity.MainActivity
 import com.ud.omdb.databinding.FragmentMovieDetailsBinding
 import com.ud.omdb.model.MovieDetails
+import com.ud.omdb.viewmodel.MovieDetailsViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 
 class MovieDetailsFragment : Fragment() {
-
-    private lateinit var parentActivity: MainActivity
-
     private lateinit var binding: FragmentMovieDetailsBinding
+
+    private lateinit var viewModel: MovieDetailsViewModel
 
     private lateinit var movieTitle: TextView
     private lateinit var poster: ImageView
     private lateinit var errorMessage: TextView
-    private lateinit var movieId: String
 
+    private lateinit var movieId: String
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        parentActivity = activity as MainActivity
 
         if (arguments != null) {
             movieId = arguments!!.getString("id", "mock")
         }
-
-        parentActivity.supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        (requireActivity() as AppCompatActivity).supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        initViewModel()
     }
 
     override fun onCreateView(
@@ -46,7 +45,6 @@ class MovieDetailsFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         initDataBinding(inflater, container)
-
         loadMovieDetails()
         return binding.root
     }
@@ -59,25 +57,26 @@ class MovieDetailsFragment : Fragment() {
         errorMessage = binding.tvErrorMessage
     }
 
+    private fun initViewModel() {
+        viewModel = MovieDetailsViewModel(requireActivity().application)
+    }
+
     private fun loadMovieDetails() {
-        CoroutineScope(Dispatchers.Main).launch {
+        viewModel.viewModelScope.launch {
             hideErrorMessage()
             var movieDetails: MovieDetails? = null
             try {
-                movieDetails = parentActivity.loadMovieDetails(movieId)
+                movieDetails = viewModel.loadMovieDetails(movieId)
             } catch (exp: Exception) {
                 showErrorMessage(exp.localizedMessage)
                 return@launch
             }
             binding.movie = movieDetails
             if (movieDetails.poster != "N/A") {
-                Picasso.with(parentActivity)
-                    .load(movieDetails.poster)
-                    .into(poster)
+                viewModel.loadPoster(movieDetails.poster, poster)
             }
         }
     }
-
 
     private fun showErrorMessage(error: String?) {
         errorMessage.visibility = View.VISIBLE

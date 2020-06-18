@@ -1,26 +1,31 @@
 package com.ud.omdb.fragment
 
-import android.annotation.SuppressLint
+import android.app.Application
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.textfield.TextInputLayout
 import com.jakewharton.rxbinding2.widget.RxTextView
 import com.ud.omdb.R
-import com.ud.omdb.activity.MainActivity
 import com.ud.omdb.databinding.FragmentSearchBinding
-import com.ud.omdb.model.SearchResult
+import com.ud.omdb.listener.OnItemTouchListener
 import com.ud.omdb.recycler.MovieListAdapter
 import com.ud.omdb.recycler.PaginationListener
+import com.ud.omdb.viewmodel.SearchViewModel
+import io.reactivex.disposables.Disposable
 import kotlinx.coroutines.*
 import java.util.concurrent.TimeUnit
+import kotlin.coroutines.coroutineContext
 
 class SearchFragment : Fragment() {
 
@@ -33,14 +38,16 @@ class SearchFragment : Fragment() {
 
     private lateinit var movieListAdapter: MovieListAdapter
 
-    private lateinit var parentActivity: MainActivity
+    private lateinit var onItemTouchListener: OnItemTouchListener
 
-    private lateinit var searchedTitle: String
-    private lateinit var searchResult: SearchResult
+    private lateinit var viewModel: SearchViewModel
+
+    private lateinit var searchInputDisposable: Disposable
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        parentActivity = activity as MainActivity
+        initViewModel()
+        onItemTouchListener = requireActivity() as OnItemTouchListener
     }
 
     override fun onCreateView(
@@ -49,13 +56,15 @@ class SearchFragment : Fragment() {
     ): View? {
         initDataBinding(layoutInflater, container)
         initRecyclerView()
-        subscribeOnSearchInput()
+        searchInputDisposable = subscribeOnSearchInput()
         return binding.root
     }
 
     override fun onHiddenChanged(hidden: Boolean) {
         if (!hidden) {
-            parentActivity.supportActionBar?.setDisplayHomeAsUpEnabled(false)
+            (requireActivity() as AppCompatActivity).supportActionBar?.setDisplayHomeAsUpEnabled(
+                false
+            )
         }
         super.onHiddenChanged(hidden)
     }
@@ -70,39 +79,47 @@ class SearchFragment : Fragment() {
         movieListRecycler = binding.rvMovieList
     }
 
+    private fun initViewModel() {
+        viewModel = SearchViewModel(requireActivity().application)
+    }
+
     private fun initRecyclerView() {
-        val layoutManager = LinearLayoutManager(parentActivity)
+        val layoutManager = LinearLayoutManager(requireActivity())
 
         movieListRecycler.layoutManager = layoutManager
-        movieListAdapter = MovieListAdapter(parentActivity, parentActivity)
+        movieListAdapter = MovieListAdapter(viewModel, onItemTouchListener)
         movieListRecycler.adapter = movieListAdapter
 
         movieListRecycler.addOnScrollListener(object : PaginationListener(layoutManager) {
             override fun loadNextPage() {
-                if (parentActivity.currentPage < parentActivity.maxPages) {
+                if (viewModel.currentPage < viewModel.maxPages) {
                     loadMoreMovies()
                 }
             }
 
             override fun isLoading(): Boolean {
-                return parentActivity.isLoading
+                return viewModel.isLoading
             }
 
         })
     }
 
-    @SuppressLint("CheckResult")
-    private fun subscribeOnSearchInput() {
+    override fun onDestroy() {
+        super.onDestroy()
+        searchInputDisposable.dispose()
+    }
+
+    private fun subscribeOnSearchInput(): Disposable {
         val searchInputObservable = RxTextView.textChanges(titleEditText)
             .map { titleEditText.text.toString() }
             .filter { it.length >= 3 || it.isEmpty() }
             .debounce(800, TimeUnit.MILLISECONDS)
             .distinctUntilChanged()
 
-        searchInputObservable.subscribe(
+        return searchInputObservable.subscribe(
             {
                 if (it.isNotEmpty()) {
-                    searchedTitle = it
+                    viewModel.searchedTitle = it
                     CoroutineScope(Dispatchers.IO).launch {
                         searchForMovie()
                     }
@@ -114,74 +131,63 @@ class SearchFragment : Fragment() {
 
     //Network
     private fun searchForMovie() {
-        CoroutineScope(Dispatchers.Main).launch {
+        viewModel.viewModelScope.launch {
             hideErrorMessage()
             hideOnLoadError()
-
-            resetPagination()
+            resetView()
             try {
-                searchResult = parentActivity.loadMoviesList(searchedTitle)
+                viewModel.loadMoviesList()
             } catch (exp: Exception) {
                 showErrorMessage(exp.localizedMessage)
                 return@launch
             }
-            calculateMaxPages(searchResult.totalResults)
+            viewModel.calculateMaxPages()
             handleResponse()
         }
     }
 
     private fun loadMoreMovies() {
-        CoroutineScope(Dispatchers.Main).launch {
+        viewModel.viewModelScope.launch {
             withContext(coroutineContext) {
                 hideErrorMessage()
                 hideOnLoadError()
 
-                parentActivity.isLoading = true
-                ++parentActivity.currentPage
+                viewModel.isLoading = true
+                ++viewModel.currentPage
                 movieListAdapter.showLoader()
             }
             try {
-                searchResult = parentActivity.loadMoviesList(searchedTitle)
+                viewModel.loadMoviesList()
             } catch (exp: Exception) {
                 showOnLoadError()
                 movieListAdapter.hideLoader()
-                --parentActivity.currentPage
+                --viewModel.currentPage
                 return@launch
             }
             withContext(coroutineContext) {
                 movieListAdapter.hideLoader()
-                parentActivity.isLoading = false
+                viewModel.isLoading = false
                 handleResponse()
             }
         }
     }
 
     private suspend fun handleResponse() {
-        withContext(Dispatchers.Main) {
-            if (searchResult.success) {
-                movieListAdapter.addItems(searchResult.list)
+        withContext(coroutineContext) {
+            if (viewModel.searchResult.success) {
+                movieListAdapter.addItems(viewModel.searchResult.list)
             } else {
-                showErrorMessage(searchResult.errorMessage)
+                showErrorMessage(viewModel.searchResult.errorMessage)
             }
         }
     }
 
-    //Pagination
-    private fun resetPagination() {
+    //Return view to initial state
+    private fun resetView() {
         movieListAdapter.clear()
         movieListRecycler.visibility = View.VISIBLE
         errorMessage.text = null
-        parentActivity.currentPage = 1
-        parentActivity.maxPages = parentActivity.currentPage
-    }
-
-    private fun calculateMaxPages(resultsCount: Int) {
-        val modulo = resultsCount % parentActivity.pageSize
-        parentActivity.maxPages = if (modulo > 0) {
-            (resultsCount / parentActivity.pageSize) + 1
-        } else {
-            resultsCount / parentActivity.pageSize
-        }
+        viewModel.resetPagination()
     }
 
     //Errors

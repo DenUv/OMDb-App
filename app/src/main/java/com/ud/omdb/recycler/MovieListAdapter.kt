@@ -1,19 +1,18 @@
 package com.ud.omdb.recycler
 
-import android.app.Activity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.databinding.DataBindingUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.ud.omdb.R
-import com.ud.omdb.activity.MainActivity
 import com.ud.omdb.databinding.MovieListItemBinding
 import com.ud.omdb.listener.OnItemTouchListener
 import com.ud.omdb.model.MovieDetails
+import com.ud.omdb.viewmodel.SearchViewModel
 
 class MovieListAdapter(
-    private val parentActivity: Activity,
+    private val viewModel: SearchViewModel,
     private val onTouchListener: OnItemTouchListener
 ) : RecyclerView.Adapter<BaseViewHolder>() {
 
@@ -39,7 +38,7 @@ class MovieListAdapter(
     }
 
     override fun getItemViewType(position: Int): Int {
-        return if ((parentActivity as MainActivity).isLoading) {
+        return if (viewModel.isLoading) {
             if (position == movieList.size - 1) {
                 VIEW_TYPE_LOADING
             } else {
