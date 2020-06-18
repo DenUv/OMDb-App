@@ -9,6 +9,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.squareup.picasso.Picasso
 import com.ud.omdb.R
@@ -57,7 +58,7 @@ class MovieDetailsFragment : Fragment() {
     }
 
     private fun initViewModel() {
-        viewModel = MovieDetailsViewModel()
+        viewModel = ViewModelProvider(requireActivity()).get(MovieDetailsViewModel::class.java)
     }
 
     private fun loadMovieDetails() {

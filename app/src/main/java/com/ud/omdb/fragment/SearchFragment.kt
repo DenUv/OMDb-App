@@ -1,6 +1,5 @@
 package com.ud.omdb.fragment
 
-import android.app.Application
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -23,7 +22,10 @@ import com.ud.omdb.recycler.MovieListAdapter
 import com.ud.omdb.recycler.PaginationListener
 import com.ud.omdb.viewmodel.SearchViewModel
 import io.reactivex.disposables.Disposable
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.coroutineContext
 
@@ -80,7 +82,7 @@ class SearchFragment : Fragment() {
     }
 
     private fun initViewModel() {
-        viewModel = SearchViewModel()
+        viewModel = ViewModelProvider(requireActivity()).get(SearchViewModel::class.java)
     }
 
     private fun initRecyclerView() {
@@ -147,7 +149,7 @@ class SearchFragment : Fragment() {
     }
 
     private fun loadMoreMovies() {
-        viewModel.viewModelScope.launch {
+        CoroutineScope(Dispatchers.Main).launch {
             withContext(coroutineContext) {
                 hideErrorMessage()
                 hideOnLoadError()
