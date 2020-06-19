@@ -10,11 +10,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.lifecycleScope
 import com.squareup.picasso.Picasso
 import com.ud.omdb.R
 import com.ud.omdb.databinding.FragmentMovieDetailsBinding
-import com.ud.omdb.model.MovieDetails
 import com.ud.omdb.viewmodel.MovieDetailsViewModel
 import kotlinx.coroutines.launch
 
@@ -62,18 +61,17 @@ class MovieDetailsFragment : Fragment() {
     }
 
     private fun loadMovieDetails() {
-        viewModel.viewModelScope.launch {
+        lifecycleScope.launch {
             hideErrorMessage()
-            var movieDetails: MovieDetails? = null
             try {
-                movieDetails = viewModel.loadMovieDetails(movieId)
+                viewModel.loadMovieDetails(movieId)
             } catch (exp: Exception) {
                 showErrorMessage(exp.localizedMessage)
                 return@launch
             }
-            binding.movie = movieDetails
-            if (movieDetails.poster != "N/A") {
-                loadPoster(movieDetails.poster, poster)
+            binding.movie = viewModel.movieDetails
+            if (viewModel.movieDetails.poster != "N/A") {
+                loadPoster(viewModel.movieDetails.poster, poster)
             }
         }
     }

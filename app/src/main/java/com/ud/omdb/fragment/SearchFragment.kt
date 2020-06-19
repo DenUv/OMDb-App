@@ -10,7 +10,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.textfield.TextInputLayout
@@ -22,8 +22,6 @@ import com.ud.omdb.recycler.MovieListAdapter
 import com.ud.omdb.recycler.PaginationListener
 import com.ud.omdb.viewmodel.SearchViewModel
 import io.reactivex.disposables.Disposable
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.concurrent.TimeUnit
@@ -122,9 +120,7 @@ class SearchFragment : Fragment() {
             {
                 if (it.isNotEmpty()) {
                     viewModel.searchedTitle = it
-                    CoroutineScope(Dispatchers.IO).launch {
-                        searchForMovie()
-                    }
+                    searchForMovie()
                 }
             },
             { errorMessage.text = it.localizedMessage }
@@ -133,7 +129,7 @@ class SearchFragment : Fragment() {
 
     //Network
     private fun searchForMovie() {
-        viewModel.viewModelScope.launch {
+        lifecycleScope.launch {
             hideErrorMessage()
             hideOnLoadError()
             resetView()
@@ -149,14 +145,16 @@ class SearchFragment : Fragment() {
     }
 
     private fun loadMoreMovies() {
-        CoroutineScope(Dispatchers.Main).launch {
+        lifecycleScope.launch {
             withContext(coroutineContext) {
                 hideErrorMessage()
                 hideOnLoadError()
 
-                viewModel.isLoading = true
-                ++viewModel.currentPage
+                viewModel.nextPage()
                 movieListAdapter.showLoader()
+                movieListRecycler.post {
+                    movieListAdapter.notifyItemInserted(movieListAdapter.itemCount)
+                }
             }
             try {
                 viewModel.loadMoviesList()

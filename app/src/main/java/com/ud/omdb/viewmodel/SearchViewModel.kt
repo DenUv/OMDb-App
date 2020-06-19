@@ -1,17 +1,10 @@
 package com.ud.omdb.viewmodel
 
 import androidx.lifecycle.ViewModel
-import com.ud.omdb.BuildConfig
 import com.ud.omdb.model.SearchResult
-import com.ud.omdb.network.NetworkClient
-import com.ud.omdb.network.service.SearchService
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import com.ud.omdb.repository.OmdbRepository
 
 class SearchViewModel : ViewModel() {
-
-    private var searchService: SearchService =
-        NetworkClient().createService(SearchService::class.java)
 
     //pagination
     private val pageSize: Int = 10
@@ -25,11 +18,7 @@ class SearchViewModel : ViewModel() {
         private set
 
     suspend fun loadMoviesList() {
-        searchResult = withContext(Dispatchers.IO) {
-            searchService.search(
-                BuildConfig.API_KEY, searchedTitle, currentPage
-            )
-        }
+        searchResult = OmdbRepository.loadMoviesList(searchedTitle, currentPage)
     }
 
     fun resetPagination() {
@@ -46,6 +35,11 @@ class SearchViewModel : ViewModel() {
         } else {
             searchResultCount / pageSize
         }
+    }
+
+    fun nextPage(){
+        isLoading = true
+        ++currentPage
     }
 
 }

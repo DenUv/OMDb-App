@@ -60,6 +60,7 @@ dependencies {
     def viewModelVersion = '2.2.0'
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$viewModelVersion"
     implementation "androidx.lifecycle:lifecycle-extensions:$viewModelVersion"
+    implementation "androidx.lifecycle:lifecycle-runtime-ktx:$viewModelVersion"
     annotationProcessor "androidx.lifecycle:lifecycle-compiler:$viewModelVersion"
 
     // RxJava2

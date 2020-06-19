@@ -67,7 +67,6 @@ class MovieListAdapter(
                 "mock"
             )
         )
-        notifyItemInserted(movieList.size)
     }
 
     fun hideLoader() {
